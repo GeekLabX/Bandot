@@ -12,7 +12,7 @@ pub trait Trait: balances::Trait {
 
 // This module's storage items.
 decl_storage! {
-	trait Store for Module<T: Trait> as TemplateModule {
+	trait Store for Module<T: Trait> as BancorModule {
 		Base get(base_supply): u128;
         Token get(token_supply): u128;
         Cw get(cw1k): u64;

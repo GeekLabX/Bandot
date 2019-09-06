@@ -26,14 +26,14 @@ decl_module! {
 	pub struct Module<T: Trait> for enum Call where origin: T::Origin {
 		fn deposit_event() = default;
 
-		fn Init(origin) -> Result{
+		fn init(origin) -> Result{
 			let sender = ensure_signed(origin)?;
 			<Admin<T>>::put(&sender);
 
 			Ok(())
 		}
 
-		fn Mint(origin, to: T::AccountId, value: u64) -> Result {
+		fn mint(origin, to: T::AccountId, value: u64) -> Result {
 			let sender = ensure_signed(origin)?;
 			ensure!(sender == Self::admin(), "only owner can use!");
 
@@ -50,7 +50,7 @@ decl_module! {
 			Ok(())
 		}
 
-		fn Burn(origin, to: T::AccountId, value:u64) -> Result {
+		fn burn(origin, to: T::AccountId, value:u64) -> Result {
 			let sender = ensure_signed(origin)?;
 			ensure!(sender == Self::admin(), "only owner can use!");
 
