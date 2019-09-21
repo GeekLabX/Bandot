@@ -1,23 +1,55 @@
-
 use support::{
 	decl_module, decl_storage, decl_event, ensure,
 	StorageValue, StorageMap, dispatch::Result
 };
+use codec::{Encode, Decode};
 use system::ensure_signed;
 
 /// The module's configuration trait.
 pub trait Trait: balances::Trait {
-    type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
+	type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
+}
+
+#[cfg_attr(feature = "std", derive(Debug))]
+#[derive(Encode, Decode, Default, Clone, PartialEq, Eq)]
+pub struct UserAssets<T: Trait> {
+	pub owner: T::AccountId,
+	pub staking_amount: u128,
+	pub locked_amount: u128,
+	pub lending_amount: u128,
+}
+
+
+impl<T: Trait> UserAssets<T> {
+	pub fn init(
+		owner: T::AccountId,
+		staking_amount: u128,
+		locked_amount: u128,
+		lending_amount: u128,
+	) -> Self {
+		Self {
+			owner,
+			staking_amount,
+			locked_amount,
+			lending_amount,
+		}
+	}
 }
 
 // This module's storage items.
 decl_storage! {
 	trait Store for Module<T: Trait> as TokenModule {
-		TotalSupply get(total_supply): u64 = 21000000; // deprecated
-		Circulation get(circulation): u64 = 0;
+		TotalSupply get(total_supply): u128 = 21000000; // deprecated
+		Circulation get(circulation): u128 = 0;
 		Admin get(admin): T::AccountId;
 
-		BalanceOf get(balance_of): map T::AccountId => u64;
+		BalanceOf get(balance_of): map T::AccountId => u128;
+
+		// Assets info of current user
+
+		PoolAssets get(pool_assets): u128 = 0;
+		UserAssetsInfo get(user_assets_info): map T::AccountId => UserAssets<T>;
+		//
 	}
 }
 
@@ -33,7 +65,7 @@ decl_module! {
 			Ok(())
 		}
 
-		fn mint(origin, to: T::AccountId, value: u64) -> Result {
+		fn mint(origin, to: T::AccountId, value: u128) -> Result {
 			let sender = ensure_signed(origin)?;
 			ensure!(sender == Self::admin(), "only owner can use!");
 
@@ -50,7 +82,7 @@ decl_module! {
 			Ok(())
 		}
 
-		fn burn(origin, to: T::AccountId, value:u64) -> Result {
+		fn burn(origin, to: T::AccountId, value:u128) -> Result {
 			let sender = ensure_signed(origin)?;
 			ensure!(sender == Self::admin(), "only owner can use!");
 
@@ -68,7 +100,7 @@ decl_module! {
 			Ok(())
 		}
 
-		pub fn transfer(origin, to: T::AccountId, value: u64) -> Result {
+		pub fn transfer(origin, to: T::AccountId, value: u128) -> Result {
 			let sender = ensure_signed(origin)?;
 			let sender_balance = Self::balance_of(sender.clone());
 			ensure!(sender_balance >= value, "Not enough balance.");
@@ -77,12 +109,49 @@ decl_module! {
 			let receiver_balance = Self::balance_of(to.clone());
 			let updated_to_balance = receiver_balance.checked_add(value).ok_or("overflow in calculating balance")?;
 
-			// 发送者减少余额
+			// reduce sender balance
 			<BalanceOf<T>>::insert(sender.clone(), updated_from_balance);
-			// 接受者增加余额
+			// add receiver balance
 			<BalanceOf<T>>::insert(to.clone(), updated_to_balance);
 
 			Self::deposit_event(RawEvent::Transfer(sender, to, value));
+			Ok(())
+		}
+		pub fn deposit(origin, amount: u128) -> Result {
+			let owner = ensure_signed(origin)?;
+			let mut user_asserts = Self::user_assets_info(owner.clone());
+
+			let pre_staking_amount = user_asserts.staking_amount;
+
+			user_asserts.staking_amount = pre_staking_amount.checked_add(amount).ok_or("overflow in circulation")?;
+			<UserAssetsInfo<T>>::insert(owner.clone(), user_asserts);
+
+			let pre_pool_assets = Self::pool_assets();
+			let updated_pool_assets = pre_pool_assets.checked_add(amount).ok_or("overflow in circulation")?;
+			PoolAssets::put(updated_pool_assets);
+
+			Self::deposit_event(RawEvent::Deposit(owner, amount, updated_pool_assets));
+			Ok(())
+		}
+
+		pub fn exchange(origin, amount: u128) -> Result {
+			let owner = ensure_signed(origin)?;
+			let mut user_asserts = Self::user_assets_info(owner.clone());
+
+			// pre-exchange
+			let pre_staking_amount = user_asserts.staking_amount;
+			let pre_locked_amount = user_asserts.locked_amount;
+			let pre_lending_amount = user_asserts.lending_amount;
+
+			ensure!(pre_lending_amount >= pre_lending_amount + amount, "Not enough stake.");
+			user_asserts.lending_amount = pre_lending_amount + amount;
+			user_asserts.locked_amount = pre_locked_amount + amount;
+			
+			let fee = 1u128;
+			<UserAssetsInfo<T>>::insert(owner.clone(), user_asserts);
+
+
+			Self::deposit_event(RawEvent::Exchange(owner, amount, fee));
 			Ok(())
 		}
 	}
@@ -90,8 +159,10 @@ decl_module! {
 
 decl_event!(
 	pub enum Event<T> where AccountId = <T as system::Trait>::AccountId {
-		Mint(AccountId, u64),
-		Burn(AccountId, u64),
-		Transfer(AccountId, AccountId, u64),
+		Mint(AccountId, u128),
+		Burn(AccountId, u128),
+		Transfer(AccountId, AccountId, u128),
+		Deposit(AccountId, u128, u128),
+		Exchange(AccountId, u128, u128),
 	}
 );
