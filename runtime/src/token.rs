@@ -21,17 +21,18 @@ pub struct UserAssets {
 // This module's storage items.
 decl_storage! {
 	trait Store for Module<T: Trait> as TokenModule {
-		TotalSupply get(total_supply): u128 = 21000000; // deprecated
+		// circulation
 		Circulation get(circulation): u128 = 0;
+		// Admin account
 		Admin get(admin): T::AccountId;
-
+		// BDT balance of user
 		BalanceOf get(balance_of): map T::AccountId => u128;
-
-		// Assets info of current user
-
+		// Assets of current pooling
 		PoolAssets get(pool_assets): u128 = 0;
+		// Assets info of current user
 		UserAssetsInfo get(user_assets_info): map T::AccountId => UserAssets;
-		//
+		// set rate fee by Oracle service
+		RateFee1k get(rate_fee1k): u8 = 1;
 	}
 }
 
@@ -106,11 +107,11 @@ decl_module! {
 
 			let pre_staking_amount = user_asserts.staking_amount;
 
-			user_asserts.staking_amount = pre_staking_amount.checked_add(amount).ok_or("overflow in circulation")?;
+			user_asserts.staking_amount = pre_staking_amount.checked_add(amount).ok_or("overflow in staking")?;
 			<UserAssetsInfo<T>>::insert(owner.clone(), user_asserts);
 
 			let pre_pool_assets = Self::pool_assets();
-			let updated_pool_assets = pre_pool_assets.checked_add(amount).ok_or("overflow in circulation")?;
+			let updated_pool_assets = pre_pool_assets.checked_add(amount).ok_or("overflow in pool")?;
 			PoolAssets::put(updated_pool_assets);
 
 			Self::deposit_event(RawEvent::Deposit(owner, amount, updated_pool_assets));
@@ -128,12 +129,19 @@ decl_module! {
 			ensure!(pre_lending_amount >= pre_lending_amount + amount, "Not enough stake.");
 			user_asserts.lending_amount = pre_lending_amount + amount;
 			user_asserts.locked_amount = pre_locked_amount + amount;
-			
+
 			let fee = 1u128;
 			<UserAssetsInfo<T>>::insert(owner.clone(), user_asserts);
 
-
 			Self::deposit_event(RawEvent::Exchange(owner, amount, fee));
+			Ok(())
+		}
+
+		pub fn set_fee(origin, fee: u8) -> Result {
+			let sender = ensure_signed(origin)?;
+            ensure!(sender == Self::admin(), "only owner can use!");
+
+			RateFee1k::put(fee);
 			Ok(())
 		}
 	}
