@@ -12,28 +12,10 @@ pub trait Trait: balances::Trait {
 
 #[cfg_attr(feature = "std", derive(Debug))]
 #[derive(Encode, Decode, Default, Clone, PartialEq, Eq)]
-pub struct UserAssets<T: Trait> {
-	pub owner: T::AccountId,
+pub struct UserAssets {
 	pub staking_amount: u128,
 	pub locked_amount: u128,
 	pub lending_amount: u128,
-}
-
-
-impl<T: Trait> UserAssets<T> {
-	pub fn init(
-		owner: T::AccountId,
-		staking_amount: u128,
-		locked_amount: u128,
-		lending_amount: u128,
-	) -> Self {
-		Self {
-			owner,
-			staking_amount,
-			locked_amount,
-			lending_amount,
-		}
-	}
 }
 
 // This module's storage items.
@@ -48,7 +30,7 @@ decl_storage! {
 		// Assets info of current user
 
 		PoolAssets get(pool_assets): u128 = 0;
-		UserAssetsInfo get(user_assets_info): map T::AccountId => UserAssets<T>;
+		UserAssetsInfo get(user_assets_info): map T::AccountId => UserAssets;
 		//
 	}
 }
@@ -117,6 +99,7 @@ decl_module! {
 			Self::deposit_event(RawEvent::Transfer(sender, to, value));
 			Ok(())
 		}
+
 		pub fn deposit(origin, amount: u128) -> Result {
 			let owner = ensure_signed(origin)?;
 			let mut user_asserts = Self::user_assets_info(owner.clone());
@@ -139,7 +122,6 @@ decl_module! {
 			let mut user_asserts = Self::user_assets_info(owner.clone());
 
 			// pre-exchange
-			let pre_staking_amount = user_asserts.staking_amount;
 			let pre_locked_amount = user_asserts.locked_amount;
 			let pre_lending_amount = user_asserts.lending_amount;
 

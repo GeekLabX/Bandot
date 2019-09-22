@@ -6,7 +6,7 @@ use substrate_client::LongestChain;
 use babe::{import_queue, start_babe, Config};
 use grandpa::{self, FinalityProofProvider as GrandpaFinalityProofProvider};
 use futures::prelude::*;
-use bandot_node_runtime::{self, GenesisConfig, opaque::Block, RuntimeApi, WASM_BINARY};
+use bandot_node_runtime::{self, GenesisConfig, opaque::Block, RuntimeApi};
 use substrate_service::{
 	error::{Error as ServiceError}, 
 	AbstractService, Configuration, ServiceBuilder
