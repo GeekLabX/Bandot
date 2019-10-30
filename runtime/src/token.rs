@@ -1,12 +1,18 @@
 use support::{
 	decl_module, decl_storage, decl_event, ensure,
-	StorageValue, StorageMap, dispatch::Result
+	StorageValue, StorageMap, dispatch::Result, Parameter
 };
-use codec::{Encode, Decode};
+use sr_primitives::{
+	traits::{
+		SimpleArithmetic, Member, CheckedAdd, CheckedSub, MaybeSerializeDebug,
+	},
+};
+use codec::{Encode, Decode, Codec};
 use system::ensure_signed;
 
 /// The module's configuration trait.
 pub trait Trait: balances::Trait {
+	type TokenBalance: Parameter + Member + SimpleArithmetic + Codec + Default + Copy + MaybeSerializeDebug;
 	type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
 }
 
@@ -21,12 +27,12 @@ pub struct UserAssets {
 // This module's storage items.
 decl_storage! {
 	trait Store for Module<T: Trait> as TokenModule {
+		Init get(is_init): bool;
+		Owner get(owner) config(): T::AccountId;
 		// circulation
-		Circulation get(circulation): u128 = 0;
-		// Admin account
-		Admin get(admin): T::AccountId;
+		Circulation get(circulation) config(): T::TokenBalance;
 		// BDT balance of user
-		BalanceOf get(balance_of): map T::AccountId => u128;
+		BalanceOf get(balance_of): map T::AccountId => T::TokenBalance;
 		// Assets of current pooling
 		PoolAssets get(pool_assets): u128 = 0;
 		// Assets info of current user
@@ -43,59 +49,65 @@ decl_module! {
 
 		fn init(origin) -> Result{
 			let sender = ensure_signed(origin)?;
-			<Admin<T>>::put(&sender);
+			ensure!(Self::is_init() == false, "Already initialized.");
+			ensure!(Self::owner() == sender, "Only owner can initalize.");
+
+			<BalanceOf<T>>::insert(sender.clone(), Self::circulation());
+			Init::put(true);
 
 			Ok(())
 		}
 
-		fn mint(origin, to: T::AccountId, value: u128) -> Result {
+		fn mint(origin, to: T::AccountId, #[compact] value: T::TokenBalance) -> Result {
 			let sender = ensure_signed(origin)?;
-			ensure!(sender == Self::admin(), "only owner can use!");
+			ensure!(sender == Self::owner(), "only owner can use!");
 
 			let receiver_balance = Self::balance_of(to.clone());
-			let updated_to_balance = receiver_balance.checked_add(value).ok_or("overflow in balance")?;
+			let updated_to_balance = receiver_balance.checked_add(&value).ok_or("overflow in balance")?;
 			<BalanceOf<T>>::insert(to.clone(), updated_to_balance);
 
 			let base_circulation = Self::circulation();
-			let updated_circulation = base_circulation.checked_add(value).ok_or("overflow in circulation")?;
-			Circulation::put(updated_circulation);
+			let updated_circulation = base_circulation.checked_add(&value).ok_or("overflow in circulation")?;
+			<Circulation<T>>::put(updated_circulation);
 
 			Self::deposit_event(RawEvent::Mint(to, value));
 
 			Ok(())
 		}
 
-		fn burn(origin, to: T::AccountId, value:u128) -> Result {
+		fn burn(origin, to: T::AccountId, #[compact] value: T::TokenBalance) -> Result {
 			let sender = ensure_signed(origin)?;
-			ensure!(sender == Self::admin(), "only owner can use!");
+			ensure!(sender == Self::owner(), "only owner can use!");
 
 			let sender_balance = Self::balance_of(to.clone());
 			ensure!(sender_balance >= value, "Not enough balance.");
-			let updated_from_balance = sender_balance.checked_sub(value).ok_or("overflow in balance")?;
+			let updated_from_balance = sender_balance.checked_sub(&value).ok_or("overflow in balance")?;
 			<BalanceOf<T>>::insert(to.clone(), updated_from_balance);
 
 			let base_circulation = Self::circulation();
-			let updated_circulation = base_circulation.checked_sub(value).ok_or("overflow in circulation")?;
-			Circulation::put(updated_circulation);
+			let updated_circulation = base_circulation.checked_sub(&value).ok_or("overflow in circulation")?;
+			<Circulation<T>>::put(updated_circulation);
 
 			Self::deposit_event(RawEvent::Burn(to, value));
 
 			Ok(())
 		}
 
-		pub fn transfer(origin, to: T::AccountId, value: u128) -> Result {
+		pub fn transfer(origin, to: T::AccountId, #[compact] value: T::TokenBalance) -> Result {
 			let sender = ensure_signed(origin)?;
+			ensure!(<BalanceOf<T>>::exists(sender.clone()), "Account does not own this token.");
+
 			let sender_balance = Self::balance_of(sender.clone());
 			ensure!(sender_balance >= value, "Not enough balance.");
+			let updated_sender_balance = sender_balance.checked_sub(&value).ok_or("overflow in calculating balance")?;
 
-			let updated_from_balance = sender_balance.checked_sub(value).ok_or("overflow in calculating balance")?;
 			let receiver_balance = Self::balance_of(to.clone());
-			let updated_to_balance = receiver_balance.checked_add(value).ok_or("overflow in calculating balance")?;
+			let updated_receiver_balance = receiver_balance.checked_add(&value).ok_or("overflow in calculating balance")?;
 
 			// reduce sender balance
-			<BalanceOf<T>>::insert(sender.clone(), updated_from_balance);
+			<BalanceOf<T>>::insert(sender.clone(), updated_sender_balance);
 			// add receiver balance
-			<BalanceOf<T>>::insert(to.clone(), updated_to_balance);
+			<BalanceOf<T>>::insert(to.clone(), updated_receiver_balance);
 
 			Self::deposit_event(RawEvent::Transfer(sender, to, value));
 			Ok(())
@@ -139,7 +151,7 @@ decl_module! {
 
 		pub fn set_fee(origin, fee: u8) -> Result {
 			let sender = ensure_signed(origin)?;
-            ensure!(sender == Self::admin(), "only owner can use!");
+            ensure!(sender == Self::owner(), "only owner can use!");
 
 			RateFee1k::put(fee);
 			Ok(())
@@ -148,10 +160,15 @@ decl_module! {
 }
 
 decl_event!(
-	pub enum Event<T> where AccountId = <T as system::Trait>::AccountId {
-		Mint(AccountId, u128),
-		Burn(AccountId, u128),
-		Transfer(AccountId, AccountId, u128),
+	pub enum Event<T> 
+	where 
+		AccountId = <T as system::Trait>::AccountId,
+		Balance = <T as Trait>::TokenBalance
+	{
+		
+		Mint(AccountId, Balance),
+		Burn(AccountId, Balance),
+		Transfer(AccountId, AccountId, Balance),
 		Deposit(AccountId, u128, u128),
 		Exchange(AccountId, u128, u128),
 	}
