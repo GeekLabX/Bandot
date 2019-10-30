@@ -1,7 +1,7 @@
 use primitives::{Pair, Public};
 use bandot_node_runtime::{
 	AccountId, BabeConfig, BalancesConfig, GenesisConfig, GrandpaConfig,
-	SudoConfig, IndicesConfig, SystemConfig, WASM_BINARY, 
+	SudoConfig, IndicesConfig, SystemConfig, TokenConfig, WASM_BINARY, 
 };
 use babe_primitives::{AuthorityId as BabeId};
 use grandpa_primitives::{AuthorityId as GrandpaId};
@@ -123,13 +123,17 @@ fn testnet_genesis(initial_authorities: Vec<(AccountId, AccountId, GrandpaId, Ba
 			vesting: vec![],
 		}),
 		sudo: Some(SudoConfig {
-			key: root_key,
+			key: root_key.clone(),
 		}),
 		babe: Some(BabeConfig {
 			authorities: initial_authorities.iter().map(|x| (x.3.clone(), 1)).collect(),
 		}),
 		grandpa: Some(GrandpaConfig {
 			authorities: initial_authorities.iter().map(|x| (x.2.clone(), 1)).collect(),
+		}),
+		token: Some(TokenConfig {
+			owner: root_key,
+			circulation: 0,
 		}),
 	}
 }

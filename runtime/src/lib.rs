@@ -256,6 +256,7 @@ impl sudo::Trait for Runtime {
 
 /// Used for the module token in `./token.rs`
 impl token::Trait for Runtime {
+	type TokenBalance = Balance;
 	type Event = Event;
 }
 
@@ -279,7 +280,7 @@ construct_runtime!(
 		Balances: balances,
 		Sudo: sudo,
 		// Used for the module token in `./token.rs`
-		Token: token::{Module, Call, Storage, Event<T>},
+		Token: token::{Module, Call, Storage, Config<T>, Event<T>},
 		Bancor: bancor::{Module, Call, Storage, Event<T>},
 	}
 );
