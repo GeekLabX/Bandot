@@ -1,7 +1,7 @@
 use primitives::{Pair, Public};
 use bandot_node_runtime::{
 	AccountId, BabeConfig, BalancesConfig, GenesisConfig, GrandpaConfig,
-	SudoConfig, IndicesConfig, SystemConfig, TokenConfig, WASM_BINARY, 
+	SudoConfig, IndicesConfig, SystemConfig, BdtConfig, WASM_BINARY, 
 };
 use babe_primitives::{AuthorityId as BabeId};
 use grandpa_primitives::{AuthorityId as GrandpaId};
@@ -18,8 +18,7 @@ pub type ChainSpec = substrate_service::ChainSpec<GenesisConfig>;
 /// from a string (`--chain=...`) into a `ChainSpec`.
 #[derive(Clone, Debug)]
 pub enum Alternative {
-	/// Whatever the current runtime is, with just Alice as an auth.
-	Development,
+	/// Whatever the current runtime is, with just Alice as an auth.  Development,
 	/// Whatever the current runtime is, with simple Alice/Bob auths.
 	LocalTestnet,
 }
@@ -131,7 +130,7 @@ fn testnet_genesis(initial_authorities: Vec<(AccountId, AccountId, GrandpaId, Ba
 		grandpa: Some(GrandpaConfig {
 			authorities: initial_authorities.iter().map(|x| (x.2.clone(), 1)).collect(),
 		}),
-		token: Some(TokenConfig {
+		bdt: Some(BdtConfig {
 			owner: root_key,
 			circulation: 0,
 		}),

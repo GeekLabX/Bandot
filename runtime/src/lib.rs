@@ -61,8 +61,9 @@ pub type Hash = primitives::H256;
 /// Digest item type.
 pub type DigestItem = generic::DigestItem<Hash>;
 
-/// Used for the module token in `./token.rs`
-mod token;
+mod traits;
+
+mod bdt;
 
 mod bancor;
 
@@ -254,9 +255,8 @@ impl sudo::Trait for Runtime {
 	type Proposal = Call;
 }
 
-/// Used for the module token in `./token.rs`
-impl token::Trait for Runtime {
-	type TokenBalance = Balance;
+impl bdt::Trait for Runtime {
+	type Balance = Balance;
 	type Event = Event;
 }
 
@@ -280,7 +280,7 @@ construct_runtime!(
 		Balances: balances,
 		Sudo: sudo,
 		// Used for the module token in `./token.rs`
-		Token: token::{Module, Call, Storage, Config<T>, Event<T>},
+		Bdt: bdt::{Module, Call, Storage, Config<T>, Event<T>},
 		Bancor: bancor::{Module, Call, Storage, Event<T>},
 	}
 );
