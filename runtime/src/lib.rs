@@ -62,9 +62,9 @@ pub type Hash = primitives::H256;
 pub type DigestItem = generic::DigestItem<Hash>;
 
 mod traits;
-
 mod bdt;
-
+mod pdot;
+mod pool;
 mod bancor;
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
@@ -260,6 +260,17 @@ impl bdt::Trait for Runtime {
 	type Event = Event;
 }
 
+impl pdot::Trait for Runtime {
+	type Balance = Balance;
+	type Event = Event;
+}
+
+impl pool::Trait for Runtime {
+	type Sai = Bdt;
+	type Skr = Pdot;
+	type Event = Event;
+}
+
 impl bancor::Trait for Runtime {
 	type Event = Event;
 }
@@ -281,6 +292,9 @@ construct_runtime!(
 		Sudo: sudo,
 		// Used for the module token in `./token.rs`
 		Bdt: bdt::{Module, Call, Storage, Config<T>, Event<T>},
+		Pdot: pdot::{Module, Call, Storage, Config<T>, Event<T>},
+		Pool: pool::{Module, Call, Storage, Config<T>, Event<T>},
+
 		Bancor: bancor::{Module, Call, Storage, Event<T>},
 	}
 );
