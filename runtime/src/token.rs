@@ -11,7 +11,7 @@ use codec::{Encode, Decode, Codec};
 use system::ensure_signed;
 
 /// The module's configuration trait.
-pub trait Trait: balances::Trait {
+pub trait Trait: system::Trait {
 	type TokenBalance: Parameter + Member + SimpleArithmetic + Codec + Default + Copy + MaybeSerializeDebug;
 	type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
 }
