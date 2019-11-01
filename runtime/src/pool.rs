@@ -14,22 +14,22 @@ use crate::traits::{Token, MintableToken};
 
 /// The module's configuration trait.
 pub trait Trait: system::Trait {
-	type Sai: MintableToken<Self::AccountId>; // Stablecoin
-	type Skr: Token<Self::AccountId>; // Abstracted collateral
+	type Sc: MintableToken<Self::AccountId>; // Stable coin
+	type Coll: Token<Self::AccountId>; // Abstracted collateral
 	// type Gem: Currency<Self::AccountId>; // Underlying collateral
 
 	type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
 }
 
-type SaiBalanceOf<T> = <<T as Trait>::Sai as Token<<T as system::Trait>::AccountId>>::Balance;
-type SkrBalanceOf<T> = <<T as Trait>::Skr as Token<<T as system::Trait>::AccountId>>::Balance;
+type ScBalanceOf<T> = <<T as Trait>::Sc as Token<<T as system::Trait>::AccountId>>::Balance;
+type CollBalanceOf<T> = <<T as Trait>::Coll as Token<<T as system::Trait>::AccountId>>::Balance;
 
 #[cfg_attr(feature = "std", derive(Debug))]
 #[derive(Encode, Decode, Clone, PartialEq, Eq)]
 pub struct UserAssets<T: Trait> {
-	pub staking_amount: SkrBalanceOf<T>,
-	pub locked_amount: SkrBalanceOf<T>,
-	pub lending_amount: SkrBalanceOf<T>,
+	pub staking_amount: CollBalanceOf<T>,
+	pub locked_amount: CollBalanceOf<T>,
+	pub lending_amount: CollBalanceOf<T>,
 }
 
 impl<T: Trait> Default for UserAssets<T> {
@@ -47,7 +47,7 @@ decl_storage! {
 	trait Store for Module<T: Trait> as Pool {
 		Owner get(owner) config(): T::AccountId;
 		// Assets of current pooling
-		PoolAssets get(pool_assets): SkrBalanceOf<T> = Zero::zero();
+		PoolAssets get(pool_assets): CollBalanceOf<T> = Zero::zero();
 		// Assets info of current user
 		UserAssetsInfo get(user_assets_info): map T::AccountId => UserAssets<T>;
 		// set rate fee by Oracle service
@@ -60,7 +60,7 @@ decl_module! {
 	pub struct Module<T: Trait> for enum Call where origin: T::Origin {
 		fn deposit_event() = default;
 
-		pub fn deposit(origin, #[compact] amount: SkrBalanceOf<T>) -> Result {
+		pub fn deposit(origin, #[compact] amount: CollBalanceOf<T>) -> Result {
 			let owner = ensure_signed(origin)?;
 			let mut user_asserts = Self::user_assets_info(owner.clone());
 
@@ -77,7 +77,7 @@ decl_module! {
 			Ok(())
 		}
 
-		pub fn exchange(origin, #[compact] amount: SkrBalanceOf<T>) -> Result {
+		pub fn exchange(origin, #[compact] amount: CollBalanceOf<T>) -> Result {
 			let owner = ensure_signed(origin)?;
 			let mut user_asserts = Self::user_assets_info(owner.clone());
 
@@ -110,7 +110,7 @@ decl_event!(
 	pub enum Event<T> 
 	where 
 		AccountId = <T as system::Trait>::AccountId,
-		Balance = SkrBalanceOf<T>
+		Balance = CollBalanceOf<T>
 	{
 		
 		Deposit(AccountId, Balance, Balance),

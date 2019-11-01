@@ -266,8 +266,8 @@ impl pdot::Trait for Runtime {
 }
 
 impl pool::Trait for Runtime {
-	type Sai = Bdt;
-	type Skr = Pdot;
+	type Sc = Bdt;
+	type Coll = Pdot;
 	type Event = Event;
 }
 
