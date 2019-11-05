@@ -2,11 +2,12 @@ use support::{
 	decl_module, decl_storage, decl_event, ensure,
 	StorageValue, StorageMap, dispatch::Result, Parameter
 };
-use sr_primitives::{
-	traits::{
-		SimpleArithmetic, Member, CheckedAdd, CheckedSub, MaybeSerializeDebug,
-	},
-};
+//use sr_primitives::{
+//	traits::{
+//		SimpleArithmetic, Member,  MaybeSerializeDebug,
+//		CheckedAdd, CheckedSub,
+//	},
+//};
 use codec::{Encode, Decode, Codec};
 use system::ensure_signed;
 
@@ -63,12 +64,12 @@ decl_module! {
 			ensure!(sender == Self::owner(), "only owner can use!");
 
 			let receiver_balance = Self::balance_of(to.clone());
-			let updated_to_balance = receiver_balance.checked_add(&value).ok_or("overflow in balance")?;
+			let updated_to_balance = receiver_balance.checked_add(value).ok_or("overflow in balance")?;
 			<BalanceOf<T>>::insert(to.clone(), updated_to_balance);
 
 			let base_circulation = Self::circulation();
-			let updated_circulation = base_circulation.checked_add(&value).ok_or("overflow in circulation")?;
-			<Circulation<T>>::put(updated_circulation);
+			let updated_circulation = base_circulation.checked_add(value).ok_or("overflow in circulation")?;
+			<Circulation>::put(updated_circulation);
 
 			Self::deposit_event(RawEvent::Mint(to, value));
 
@@ -81,12 +82,12 @@ decl_module! {
 
 			let sender_balance = Self::balance_of(to.clone());
 			ensure!(sender_balance >= value, "Not enough balance.");
-			let updated_from_balance = sender_balance.checked_sub(&value).ok_or("overflow in balance")?;
+			let updated_from_balance = sender_balance.checked_sub(value).ok_or("overflow in balance")?;
 			<BalanceOf<T>>::insert(to.clone(), updated_from_balance);
 
 			let base_circulation = Self::circulation();
-			let updated_circulation = base_circulation.checked_sub(&value).ok_or("overflow in circulation")?;
-			<Circulation<T>>::put(updated_circulation);
+			let updated_circulation = base_circulation.checked_sub(value).ok_or("overflow in circulation")?;
+			<Circulation>::put(updated_circulation);
 
 			Self::deposit_event(RawEvent::Burn(to, value));
 
@@ -99,10 +100,10 @@ decl_module! {
 
 			let sender_balance = Self::balance_of(sender.clone());
 			ensure!(sender_balance >= value, "Not enough balance.");
-			let updated_sender_balance = sender_balance.checked_sub(&value).ok_or("overflow in calculating balance")?;
+			let updated_sender_balance = sender_balance.checked_sub(value).ok_or("overflow in calculating balance")?;
 
 			let receiver_balance = Self::balance_of(to.clone());
-			let updated_receiver_balance = receiver_balance.checked_add(&value).ok_or("overflow in calculating balance")?;
+			let updated_receiver_balance = receiver_balance.checked_add(value).ok_or("overflow in calculating balance")?;
 
 			// reduce sender balance
 			<BalanceOf<T>>::insert(sender.clone(), updated_sender_balance);
@@ -163,7 +164,7 @@ decl_event!(
 	pub enum Event<T> 
 	where 
 		AccountId = <T as system::Trait>::AccountId,
-		Balance = <T as Trait>::u128
+		Balance = u128
 	{
 		
 		Mint(AccountId, Balance),

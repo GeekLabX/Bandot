@@ -256,7 +256,7 @@ impl sudo::Trait for Runtime {
 
 /// Used for the module token in `./token.rs`
 impl token::Trait for Runtime {
-	type TokenBalance = Balance;
+	//type TokenBalance = Balance;
 	type Event = Event;
 }
 
