@@ -58,7 +58,7 @@ decl_module! {
 			Ok(())
 		}
 
-		fn mint(origin, to: T::AccountId, #[compact] value: T::TokenBalance) -> Result {
+		fn mint(origin, to: T::AccountId, value: T::TokenBalance) -> Result {
 			let sender = ensure_signed(origin)?;
 			ensure!(sender == Self::owner(), "only owner can use!");
 
@@ -75,7 +75,7 @@ decl_module! {
 			Ok(())
 		}
 
-		fn burn(origin, to: T::AccountId, #[compact] value: T::TokenBalance) -> Result {
+		fn burn(origin, to: T::AccountId, value: T::TokenBalance) -> Result {
 			let sender = ensure_signed(origin)?;
 			ensure!(sender == Self::owner(), "only owner can use!");
 
@@ -93,7 +93,7 @@ decl_module! {
 			Ok(())
 		}
 
-		pub fn transfer(origin, to: T::AccountId, #[compact] value: T::TokenBalance) -> Result {
+		pub fn transfer(origin, to: T::AccountId,  value: T::TokenBalance) -> Result {
 			let sender = ensure_signed(origin)?;
 			ensure!(<BalanceOf<T>>::exists(sender.clone()), "Account does not own this token.");
 
