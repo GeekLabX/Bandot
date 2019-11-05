@@ -36,10 +36,6 @@ RUN mv /usr/share/ca* /tmp && \
 	ln -s /bandot/.local/share/bandot /data && \
 	rm -rf /usr/bin /usr/sbin
 
-# checks
-RUN ldd /usr/local/bin/bandot-node && \
-	/usr/local/bin/bandot-node --version
-
 USER bandot
 EXPOSE 30333 9933 9944
 VOLUME ["/data"]

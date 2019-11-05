@@ -1,0 +1,6 @@
+version: '3'
+services:
+  bandot-ui:
+    image: bandot/bandot-ui:latest
+    ports:
+      - "80:80"
