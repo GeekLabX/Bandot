@@ -12,7 +12,7 @@ use system::ensure_signed;
 
 /// The module's configuration trait.
 pub trait Trait: balances::Trait {
-	type TokenBalance: Parameter + Member + SimpleArithmetic + Codec + Default + Copy + MaybeSerializeDebug;
+	//type TokenBalance: Parameter + Member + SimpleArithmetic + Codec + Default + Copy + MaybeSerializeDebug;
 	type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
 }
 
@@ -30,9 +30,9 @@ decl_storage! {
 		Init get(is_init): bool;
 		Owner get(owner) config(): T::AccountId;
 		// circulation
-		Circulation get(circulation) config(): T::TokenBalance;
+		Circulation get(circulation) config(): u128;
 		// BDT balance of user
-		BalanceOf get(balance_of): map T::AccountId => T::TokenBalance;
+		BalanceOf get(balance_of): map T::AccountId => u128;
 		// Assets of current pooling
 		PoolAssets get(pool_assets): u128 = 0;
 		// Assets info of current user
@@ -58,7 +58,7 @@ decl_module! {
 			Ok(())
 		}
 
-		fn mint(origin, to: T::AccountId, value: T::TokenBalance) -> Result {
+		fn mint(origin, to: T::AccountId, value: u128) -> Result {
 			let sender = ensure_signed(origin)?;
 			ensure!(sender == Self::owner(), "only owner can use!");
 
@@ -75,7 +75,7 @@ decl_module! {
 			Ok(())
 		}
 
-		fn burn(origin, to: T::AccountId, value: T::TokenBalance) -> Result {
+		fn burn(origin, to: T::AccountId, value: u128) -> Result {
 			let sender = ensure_signed(origin)?;
 			ensure!(sender == Self::owner(), "only owner can use!");
 
@@ -93,7 +93,7 @@ decl_module! {
 			Ok(())
 		}
 
-		pub fn transfer(origin, to: T::AccountId,  value: T::TokenBalance) -> Result {
+		pub fn transfer(origin, to: T::AccountId,  value: u128) -> Result {
 			let sender = ensure_signed(origin)?;
 			ensure!(<BalanceOf<T>>::exists(sender.clone()), "Account does not own this token.");
 
@@ -163,7 +163,7 @@ decl_event!(
 	pub enum Event<T> 
 	where 
 		AccountId = <T as system::Trait>::AccountId,
-		Balance = <T as Trait>::TokenBalance
+		Balance = <T as Trait>::u128
 	{
 		
 		Mint(AccountId, Balance),
