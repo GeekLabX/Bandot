@@ -1,6 +1,14 @@
 version: '3'
+
+networks:
+  bandot_ui:
+    external:
+      name: testing_net
+
 services:
   bandot-ui:
     image: bandot/bandot-ui:latest
     ports:
       - "80:80"
+    networks:
+      - bandot_ui
