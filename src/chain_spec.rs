@@ -1,7 +1,8 @@
 use primitives::{Pair, Public};
 use bandot_node_runtime::{
 	AccountId, BabeConfig, BalancesConfig, GenesisConfig, GrandpaConfig,
-	SudoConfig, IndicesConfig, SystemConfig, BdtConfig, PdotConfig, PoolConfig, WASM_BINARY, 
+	SudoConfig, IndicesConfig, SystemConfig, CdpConfig, BdtConfig, PdotConfig, 
+	PoolConfig, WASM_BINARY, 
 };
 use babe_primitives::{AuthorityId as BabeId};
 use grandpa_primitives::{AuthorityId as GrandpaId};
@@ -130,6 +131,9 @@ fn testnet_genesis(initial_authorities: Vec<(AccountId, AccountId, GrandpaId, Ba
 		}),
 		grandpa: Some(GrandpaConfig {
 			authorities: initial_authorities.iter().map(|x| (x.2.clone(), 1)).collect(),
+		}),
+		cdp: Some(CdpConfig {
+			owner: root_key.clone(),
 		}),
 		bdt: Some(BdtConfig {
 			owner: root_key.clone(),

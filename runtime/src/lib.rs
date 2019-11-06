@@ -62,6 +62,7 @@ pub type Hash = primitives::H256;
 pub type DigestItem = generic::DigestItem<Hash>;
 
 mod traits;
+mod cdp;
 mod bdt;
 mod pdot;
 mod pool;
@@ -255,6 +256,12 @@ impl sudo::Trait for Runtime {
 	type Proposal = Call;
 }
 
+impl cdp::Trait for Runtime {
+	type Sai = Bdt;
+	type Skr = Pdot;
+	type Event = Event;
+}
+
 impl bdt::Trait for Runtime {
 	type Balance = Balance;
 	type Event = Event;
@@ -291,6 +298,7 @@ construct_runtime!(
 		Balances: balances,
 		Sudo: sudo,
 		// Used for the module token in `./token.rs`
+		Cdp: cdp::{Module, Call, Storage, Config<T>, Event<T>},
 		Bdt: bdt::{Module, Call, Storage, Config<T>, Event<T>},
 		Pdot: pdot::{Module, Call, Storage, Config<T>, Event<T>},
 		Pool: pool::{Module, Call, Storage, Config<T>, Event<T>},
