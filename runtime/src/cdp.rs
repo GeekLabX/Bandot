@@ -23,8 +23,9 @@ type SkrBalanceOf<T> = <<T as Trait>::Skr as Token<<T as system::Trait>::Account
 
 #[cfg_attr(feature = "std", derive(Debug))]
 #[derive(Encode, Decode, Default, Clone, PartialEq, Eq)]
-pub struct Cup<AccountId, SkrBalance, SaiBalance> {
-	pub lad: AccountId,
+pub struct Cup<SkrBalance, SaiBalance> {
+	pub id: u64,
+
 	pub ink: SkrBalance,
 	pub art: SaiBalance,
 	pub ire: SaiBalance,
@@ -34,8 +35,12 @@ pub struct Cup<AccountId, SkrBalance, SaiBalance> {
 decl_storage! {
 	trait Store for Module<T: Trait> as Cdp {
 		Owner get(owner) config(): T::AccountId;
-		Cupi get(cupi): u32;
-		Cups get(cups): map u32 => Cup<T::AccountId, SkrBalanceOf<T>, SaiBalanceOf<T>>;
+
+		CupOwner get(owner_of): map u64 => Option<T::AccountId>;
+		AllCupsArray get(cup_by_index): map u64 => Cup<SkrBalanceOf<T>, SaiBalanceOf<T>>;
+		AllCupsCount get(all_cups_count): u64;
+		OwnedCupsArray get(cup_of_owner_by_index): map (T::AccountId, u32) => u64;
+		OwnedCupsCount get(owned_cup_count): map T::AccountId => u32;
 	}
 }
 
@@ -45,24 +50,34 @@ decl_module! {
 		fn deposit_event() = default;
 
 		pub fn open(origin) -> Result {
-			let owner = ensure_signed(origin)?;
-			let cupi = Self::cupi();
-			let new_cupi = cupi.checked_add(1).ok_or("Overflow adding a new cup")?;
-			Cupi::put(new_cupi);
-			let new_cup = Cup {
-				lad: owner,
+			let sender = ensure_signed(origin)?;
+
+			let all_cups_count = Self::all_cups_count();
+			let new_all_cups_count = all_cups_count.checked_add(1).ok_or("Overflow adding a new cup")?;
+			let cup = Cup {
+				id: all_cups_count,
 				ink: Zero::zero(),
 				art: Zero::zero(),
 				ire: Zero::zero(),
 			};
-			<Cups<T>>::insert(new_cupi, new_cup);
+			<AllCupsArray<T>>::insert(all_cups_count, cup);
+			<AllCupsCount>::put(new_all_cups_count);
+
+			<CupOwner<T>>::insert(all_cups_count, &sender);
+
+			let owned_cup_count = Self::owned_cup_count(&sender);
+			let new_owned_cup_count = owned_cup_count.checked_add(1).ok_or("Overflow adding a new cup to owned cups array")?;
+			<OwnedCupsArray<T>>::insert((sender.clone(), owned_cup_count), all_cups_count);
+			<OwnedCupsCount<T>>::insert(&sender, new_owned_cup_count);
+
 			Ok(())
 		}
 
-		pub fn lock(origin, cupi: u32, amount: SkrBalanceOf<T>) -> Result {
+		pub fn lock(origin, cupIndex: u64, amount: SkrBalanceOf<T>) -> Result {
 			let transactor = ensure_signed(origin)?;
-			let mut cup = <Cups<T>>::get(cupi);
-			cup.ink = cup.ink.checked_add(&amount).unwrap();
+			let mut cup = <AllCupsArray<T>>::get(cupIndex);
+			cup.ink = cup.ink.checked_add(&amount).ok_or("Overflow adding ink")?;
+			
 			T::Skr::transfer(&transactor, &Self::owner(), amount);
 			Ok(())
 		}
@@ -72,9 +87,9 @@ decl_module! {
 decl_event!(
 	pub enum Event<T> 
 	where 
-		AccountId = <T as system::Trait>::AccountId,
-		Balance = SkrBalanceOf<T>
-	{
-		NewCup(AccountId, Balance),
-	}
+	    AccountId = <T as system::Trait>::AccountId,
+	    Balance = SkrBalanceOf<T>
+	    {
+		    NewCup(AccountId, Balance),
+	    }
 );
