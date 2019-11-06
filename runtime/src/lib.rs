@@ -61,9 +61,11 @@ pub type Hash = primitives::H256;
 /// Digest item type.
 pub type DigestItem = generic::DigestItem<Hash>;
 
-/// Used for the module token in `./token.rs`
-mod token;
-
+mod traits;
+mod cdp;
+mod bdt;
+mod pdot;
+mod pool;
 mod bancor;
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
@@ -254,9 +256,25 @@ impl sudo::Trait for Runtime {
 	type Proposal = Call;
 }
 
-/// Used for the module token in `./token.rs`
-impl token::Trait for Runtime {
-	type TokenBalance = Balance;
+impl cdp::Trait for Runtime {
+	type Sai = Bdt;
+	type Skr = Pdot;
+	type Event = Event;
+}
+
+impl bdt::Trait for Runtime {
+	type Balance = Balance;
+	type Event = Event;
+}
+
+impl pdot::Trait for Runtime {
+	type Balance = Balance;
+	type Event = Event;
+}
+
+impl pool::Trait for Runtime {
+	type Sc = Bdt;
+	type Coll = Pdot;
 	type Event = Event;
 }
 
@@ -280,7 +298,11 @@ construct_runtime!(
 		Balances: balances,
 		Sudo: sudo,
 		// Used for the module token in `./token.rs`
-		Token: token::{Module, Call, Storage, Config<T>, Event<T>},
+		Cdp: cdp::{Module, Call, Storage, Config<T>, Event<T>},
+		Bdt: bdt::{Module, Call, Storage, Config<T>, Event<T>},
+		Pdot: pdot::{Module, Call, Storage, Config<T>, Event<T>},
+		Pool: pool::{Module, Call, Storage, Config<T>, Event<T>},
+
 		Bancor: bancor::{Module, Call, Storage, Event<T>},
 	}
 );
