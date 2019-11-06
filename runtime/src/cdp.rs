@@ -72,11 +72,14 @@ decl_module! {
 
 			Ok(())
 		}
-
-		pub fn lock(origin, cupIndex: u64, amount: SkrBalanceOf<T>) -> Result {
+		
+		// sender lock pdot to pdot owner
+		pub fn lock(origin, owned_cup_index: u32, amount: SkrBalanceOf<T>) -> Result {
 			let transactor = ensure_signed(origin)?;
-			let mut cup = <AllCupsArray<T>>::get(cupIndex);
+			let cup_index = Self::cup_of_owner_by_index((transactor.clone(), owned_cup_index));
+			let mut cup = Self::cup_by_index(cup_index);
 			cup.ink = cup.ink.checked_add(&amount).ok_or("Overflow adding ink")?;
+			<AllCupsArray<T>>::insert(cup_index, cup);
 			
 			T::Skr::transfer(&transactor, &Self::owner(), amount);
 			Ok(())
