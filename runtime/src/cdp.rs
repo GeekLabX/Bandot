@@ -3,11 +3,12 @@ use support::{
 	StorageValue, StorageMap, dispatch::Result,
 };
 use sr_primitives::traits::{
-	CheckedAdd, Zero,
+	CheckedAdd, Zero, SaturatedConversion
 };
 use codec::{Encode, Decode};
 use system::ensure_signed;
 use crate::traits::{Token, MintableToken};
+use rstd::convert::TryInto;
 use runtime_io;
 
 /// The module's configuration trait.
@@ -35,6 +36,8 @@ pub struct Cup<SkrBalance, SaiBalance> {
 decl_storage! {
 	trait Store for Module<T: Trait> as Cdp {
 		Owner get(owner) config(): T::AccountId;
+
+		SkrPrice get(skr_price): u64 = 1;
 
 		CupOwner get(owner_of): map u64 => Option<T::AccountId>;
 		AllCupsArray get(cup_by_index): map u64 => Cup<SkrBalanceOf<T>, SaiBalanceOf<T>>;
@@ -73,7 +76,7 @@ decl_module! {
 			Ok(())
 		}
 		
-		// sender lock pdot to pdot owner
+		// sender lock his pdot to cdp owner
 		pub fn lock(origin, owned_cup_index: u32, amount: SkrBalanceOf<T>) -> Result {
 			let transactor = ensure_signed(origin)?;
 			let cup_index = Self::cup_of_owner_by_index((transactor.clone(), owned_cup_index));
@@ -82,6 +85,38 @@ decl_module! {
 			<AllCupsArray<T>>::insert(cup_index, cup);
 			
 			T::Skr::transfer(&transactor, &Self::owner(), amount);
+			Ok(())
+		}
+
+		pub fn free(origin, owned_cup_index: u32, amount: SkrBalanceOf<T>) -> Result {
+			// TODO: free logic
+			Ok(())
+		}
+
+		// release stable coin to sender
+		pub fn draw(origin, owned_cup_index: u32, amount: SaiBalanceOf<T>) -> Result {
+			let sender = ensure_signed(origin)?;
+			let cup_index = Self::cup_of_owner_by_index((sender.clone(), owned_cup_index));
+			let cup_owner = Self::owner_of(cup_index).unwrap();
+			ensure!(sender == cup_owner, "only cup owner can do it!");
+
+			let mut cup = Self::cup_by_index(cup_index);
+			let new_ire = cup.ire.checked_add(&amount).ok_or("Overflow adding ire")?;
+			let skr_price = Self::skr_price();
+			// TODO: add total debt record
+			// TODO: add debt ratio
+			let new_ire_u64 = new_ire.saturated_into::<u64>();
+			let ink_u64 = cup.ink.saturated_into::<u64>();
+			let debt_cap_u64 = (ink_u64 * skr_price).saturated_into::<u64>();
+			ensure!((new_ire_u64 <= debt_cap_u64), "Debt must keep safe!");
+			// TODO: art is tax
+			// cup.art = cup.art.checked_add(&amount).ok_or("Overflow adding art")?;
+			cup.ire = cup.ire.checked_add(&amount).ok_or("Overflow adding ire")?;
+			<AllCupsArray<T>>::insert(cup_index, cup);
+			
+			// release stable coin
+			T::Sai::mint(&sender, amount);
+
 			Ok(())
 		}
 	}
