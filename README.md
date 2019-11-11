@@ -66,3 +66,25 @@ cargo run -- \
 ```
 
 Additional CLI usage options are available and may be shown by running `cargo run -- --help`.
+
+# Bandot Docker
+
+## Building the image
+
+To build your own image from the source, you can run the following command:
+```bash
+./docker/build.sh
+```
+
+NOTE: Building the image takes a while. Count at least 30min on a good machine.
+
+## Start a Bandot docker container
+
+Run the following command
+```
+docker-compose -f docker/docker-compose-local.yml up -d
+
+or 
+
+docker-compose -f docker/docker-compose.yml up -d
+```
