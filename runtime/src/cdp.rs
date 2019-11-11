@@ -127,6 +127,17 @@ decl_module! {
 
 			Ok(())
 		}
+
+		pub fn wipe(origin, owned_cup_index: u32, amount: SaiBalanceOf<T>) -> Result {
+			let sender = ensure_signed(origin)?;
+			let cup_index = Self::cup_of_owner_by_index((sender.clone(), owned_cup_index));
+			let mut cup = Self::cup_by_index(cup_index);
+			cup.debts = cup.debts.checked_sub(&amount).ok_or("Overflow subing debts")?;
+			<AllCupsArray<T>>::insert(cup_index, cup);
+			T::Sai::burn(&sender, amount);
+
+			Ok(())
+		}
 	}
 }
 
