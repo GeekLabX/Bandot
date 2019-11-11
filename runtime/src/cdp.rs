@@ -254,9 +254,18 @@ mod tests {
 	#[test]
 	fn open_position_works() {
 		with_externalities(&mut new_test_ext(), || {
+			Pdot::init(Origin::signed(2));
+			Pdot::mint(Origin::signed(2), 4, 9999);
+			assert_eq!(Pdot::balance_of(4), 9999);
+
 			// Check that accumulate works when we have Some value in Dummy already.
 			assert_ok!(Cdp::open(Origin::signed(4)));
                         assert_eq!(Cdp::all_cups_count(), 1);
+
+			Cdp::lock(Origin::signed(4), 0, 999);
+			assert_eq!(Pdot::balance_of(4), 9000);
+			let cdp = Cdp::cup_by_index(0);
+			assert_eq!(cdp.locked_collaterals, 999);
  		});
  	}
 }
