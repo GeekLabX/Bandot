@@ -127,6 +127,17 @@ decl_module! {
 
 			Ok(())
 		}
+
+		pub fn wipe(origin, owned_cup_index: u32, amount: SaiBalanceOf<T>) -> Result {
+			let sender = ensure_signed(origin)?;
+			let cup_index = Self::cup_of_owner_by_index((sender.clone(), owned_cup_index));
+			let mut cup = Self::cup_by_index(cup_index);
+			cup.debts = cup.debts.checked_sub(&amount).ok_or("Overflow subing debts")?;
+			<AllCupsArray<T>>::insert(cup_index, cup);
+			T::Sai::burn(&sender, amount);
+
+			Ok(())
+		}
 	}
 }
 
@@ -155,3 +166,97 @@ decl_event!(
 		    NewCup(AccountId, Balance),
 	    }
 );
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use crate::pdot;
+	use crate::bdt;
+
+	use support::{assert_ok, impl_outer_origin, parameter_types};
+	use runtime_io::with_externalities;
+	use primitives::{H256, Blake2Hasher};
+	// The testing primitives are very useful for avoiding having to work with signatures
+	// or public keys. `u64` is used as the `AccountId` and no `Signature`s are required.
+	use sr_primitives::{
+		Perbill, traits::{BlakeTwo256, OnInitialize, OnFinalize, IdentityLookup}, testing::Header
+	};
+
+	impl_outer_origin! {
+		pub enum Origin for Test {}
+	}
+
+	// For testing the module, we construct most of a mock runtime. This means
+	// first constructing a configuration type (`Test`) which `impl`s each of the
+	// configuration traits of modules we want to use.
+	#[derive(Clone, Eq, PartialEq)]
+	pub struct Test;
+	parameter_types! {
+		pub const BlockHashCount: u64 = 250;
+		pub const MaximumBlockWeight: u32 = 1024;
+		pub const MaximumBlockLength: u32 = 2 * 1024;
+		pub const AvailableBlockRatio: Perbill = Perbill::one();
+	}
+	impl system::Trait for Test {
+		type Origin = Origin;
+		type Index = u64;
+		type BlockNumber = u64;
+		type Hash = H256;
+		type Call = ();
+		type Hashing = BlakeTwo256;
+		type AccountId = u64;
+		type Lookup = IdentityLookup<Self::AccountId>;
+		type Header = Header;
+		type WeightMultiplierUpdate = ();
+		type Event = ();
+		type BlockHashCount = BlockHashCount;
+		type MaximumBlockWeight = MaximumBlockWeight;
+		type MaximumBlockLength = MaximumBlockLength;
+		type AvailableBlockRatio = AvailableBlockRatio;
+		type Version = ();
+	}
+	impl bdt::Trait for Test {
+		type Balance = u64;
+		type Event = ();
+	}
+	impl pdot::Trait for Test {
+		type Balance = u64;
+		type Event = ();
+	}
+	impl Trait for Test {
+		type Event = ();
+		type Sai = Bdt;
+		type Skr = Pdot;
+	}
+	type Cdp = Module<Test>;
+	type Bdt = bdt::Module<Test>;
+	type Pdot = pdot::Module<Test>;
+
+	// This function basically just builds a genesis storage key/value store according to
+	// our desired mockup.
+	fn new_test_ext() -> runtime_io::TestExternalities<Blake2Hasher> {
+		let mut t = system::GenesisConfig::default().build_storage::<Test>().unwrap();
+		// We use default for brevity, but you can configure as desired if needed.
+		let _ = bdt::GenesisConfig::<Test> {
+			owner: 1,
+			circulation: 0,
+		}.assimilate_storage(&mut t);
+		let _ = pdot::GenesisConfig::<Test> {
+			owner: 2,
+			circulation: 0,
+		}.assimilate_storage(&mut t);
+		GenesisConfig::<Test>{
+			owner: 3,
+		}.assimilate_storage(&mut t).unwrap();
+		t.into()
+	}
+
+	#[test]
+	fn open_position_works() {
+		with_externalities(&mut new_test_ext(), || {
+			// Check that accumulate works when we have Some value in Dummy already.
+			assert_ok!(Cdp::open(Origin::signed(4)));
+                        assert_eq!(Cdp::all_cups_count(), 1);
+ 		});
+ 	}
+}
