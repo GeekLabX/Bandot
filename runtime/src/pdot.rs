@@ -5,11 +5,13 @@ use support::{
 use sr_primitives::{
 	traits::{
 		SimpleArithmetic, Member, CheckedAdd, CheckedSub, MaybeSerializeDebug, StaticLookup,
+		SaturatedConversion,
 	},
 };
 use codec::Codec;
 use system::ensure_signed;
 use crate::traits::{Token, MintableToken};
+use runtime_io;
 
 pub trait Trait: system::Trait {
 	type Balance: Parameter + Member + SimpleArithmetic + Codec + Default + Copy + MaybeSerializeDebug;
@@ -47,6 +49,7 @@ decl_module! {
 			ensure!(<BalanceOf<T>>::exists(sender.clone()), "Account does not own this token.");
 			let receiver = T::Lookup::lookup(receiver)?;
 
+			let balance = Self::balance_of(&sender);
 			<Self as Token<_>>::transfer(&sender, &receiver, value)
 		}
 

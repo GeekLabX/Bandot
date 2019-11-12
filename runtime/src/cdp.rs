@@ -97,7 +97,7 @@ decl_module! {
 
 			let mut cup = Self::cup_by_index(cup_index);
 
-			cup.locked_collaterals = cup.locked_collaterals.checked_sub(&amount).unwrap_or(Zero::zero()); // check
+			cup.locked_collaterals = cup.locked_collaterals.checked_sub(&amount).ok_or("Overflow subbing")?; // check
 			ensure!(Self::safe(&cup),  "Debt must keep safe!");
 			<AllCupsArray<T>>::insert(cup_index, cup);
 
@@ -132,7 +132,7 @@ decl_module! {
 			let sender = ensure_signed(origin)?;
 			let cup_index = Self::cup_of_owner_by_index((sender.clone(), owned_cup_index));
 			let mut cup = Self::cup_by_index(cup_index);
-			cup.debts = cup.debts.checked_sub(&amount).ok_or("Overflow subing debts")?;
+			cup.debts = cup.debts.checked_sub(&amount).ok_or("Overflow subbing debts")?;
 			<AllCupsArray<T>>::insert(cup_index, cup);
 			T::Sai::burn(&sender, amount);
 
@@ -252,20 +252,129 @@ mod tests {
 	}
 
 	#[test]
-	fn open_position_works() {
+	fn open_position_and_lock_works() {
 		with_externalities(&mut new_test_ext(), || {
 			Pdot::init(Origin::signed(2));
 			Pdot::mint(Origin::signed(2), 4, 9999);
 			assert_eq!(Pdot::balance_of(4), 9999);
-
-			// Check that accumulate works when we have Some value in Dummy already.
 			assert_ok!(Cdp::open(Origin::signed(4)));
-                        assert_eq!(Cdp::all_cups_count(), 1);
-
+			assert_eq!(Cdp::all_cups_count(), 1);
 			Cdp::lock(Origin::signed(4), 0, 999);
 			assert_eq!(Pdot::balance_of(4), 9000);
 			let cdp = Cdp::cup_by_index(0);
 			assert_eq!(cdp.locked_collaterals, 999);
  		});
  	}
+
+	#[test]
+	fn should_not_lock_more_than_account_balance() {
+		with_externalities(&mut new_test_ext(), || {
+			Pdot::init(Origin::signed(2));
+			Pdot::mint(Origin::signed(2), 4, 9999);
+			assert_eq!(Pdot::balance_of(4), 9999);
+
+			Cdp::open(Origin::signed(4));
+
+			Cdp::lock(Origin::signed(4), 0, 999);
+			assert_eq!(Pdot::balance_of(4), 9000);
+			let cdp = Cdp::cup_by_index(0);
+			assert_eq!(cdp.locked_collaterals, 999);
+
+			Cdp::lock(Origin::signed(4), 0, 10000);
+			assert_eq!(Pdot::balance_of(4), 9000);
+		});
+	}
+
+	#[test]
+	fn free_works() {
+		with_externalities(&mut new_test_ext(), || {
+			Pdot::init(Origin::signed(2));
+			Pdot::mint(Origin::signed(2), 4, 9999);
+			assert_eq!(Pdot::balance_of(4), 9999);
+
+			Cdp::open(Origin::signed(4));
+			Cdp::lock(Origin::signed(4), 0, 999);
+			assert_eq!(Pdot::balance_of(4), 9000);
+
+			Cdp::free(Origin::signed(4), 0, 100);
+			assert_eq!(Pdot::balance_of(4), 9100);
+			let cdp = Cdp::cup_by_index(0);
+			assert_eq!(cdp.locked_collaterals, 899);
+
+			Cdp::free(Origin::signed(4), 0, 899);
+			assert_eq!(Pdot::balance_of(4), 9999);
+			let cdp = Cdp::cup_by_index(0);
+			assert_eq!(cdp.locked_collaterals, 0);
+		});
+	}
+
+	#[test]
+	fn should_not_free_more_than_locked() {
+		with_externalities(&mut new_test_ext(), || {
+			Pdot::init(Origin::signed(2));
+			Pdot::mint(Origin::signed(2), 4, 9999);
+			assert_eq!(Pdot::balance_of(4), 9999);
+
+			Cdp::open(Origin::signed(4));
+			Cdp::lock(Origin::signed(4), 0, 999);
+			assert_eq!(Pdot::balance_of(4), 9000);
+
+			Cdp::free(Origin::signed(4), 0, 1000);
+			assert_eq!(Pdot::balance_of(4), 9000);
+			let cdp = Cdp::cup_by_index(0);
+			assert_eq!(cdp.locked_collaterals, 999);
+		});
+	}
+
+	#[test]
+	fn draw_works() {
+		with_externalities(&mut new_test_ext(), || {
+			Pdot::init(Origin::signed(2));
+			Pdot::mint(Origin::signed(2), 4, 9999);
+			assert_eq!(Pdot::balance_of(4), 9999);
+
+			Bdt::init(Origin::signed(2));
+			assert_eq!(Bdt::balance_of(4), 0);
+
+			Cdp::open(Origin::signed(4));
+			Cdp::lock(Origin::signed(4), 0, 999);
+
+			Cdp::draw(Origin::signed(4), 0, 100);
+			let cdp = Cdp::cup_by_index(0);
+			assert_eq!(cdp.locked_collaterals, 999);
+			assert_eq!(cdp.debts, 100);
+			assert_eq!(Bdt::balance_of(4), 100);
+
+		});
+	}
+
+	#[test]
+	fn should_not_free_more_than_locked_sub_drawed() {
+		with_externalities(&mut new_test_ext(), || {
+			Pdot::init(Origin::signed(2));
+			Pdot::mint(Origin::signed(2), 4, 9999);
+			assert_eq!(Pdot::balance_of(4), 9999);
+
+			Bdt::init(Origin::signed(2));
+			assert_eq!(Bdt::balance_of(4), 0);
+
+			Cdp::open(Origin::signed(4));
+			Cdp::lock(Origin::signed(4), 0, 999);
+			assert_eq!(Pdot::balance_of(4), 9000);
+
+			Cdp::draw(Origin::signed(4), 0, 100);
+
+			Cdp::free(Origin::signed(4), 0, 849);
+			assert_eq!(Pdot::balance_of(4), 9849);
+			let cdp = Cdp::cup_by_index(0);
+			assert_eq!(cdp.locked_collaterals, 150);
+			assert_eq!(cdp.debts, 100);
+
+			Cdp::free(Origin::signed(4), 0, 1);
+			assert_eq!(Pdot::balance_of(4), 9849);
+			let cdp = Cdp::cup_by_index(0);
+			assert_eq!(cdp.locked_collaterals, 150);
+			assert_eq!(cdp.debts, 100);
+		});
+	}
 }
