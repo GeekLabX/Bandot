@@ -34,3 +34,7 @@ Run the following command
 docker-compose -f docker/docker-compose-local.yml up -d
 ```
 You can access the UI via http://localhost:3000
+
+## Operation Manual
+
+[Operation Manual](https://github.com/bandotorg/Bandot/blob/master/Operation_Manual.md)
