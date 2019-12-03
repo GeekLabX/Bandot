@@ -1,0 +1,16 @@
+{
+  "name": "@polkadot/app-bandot",
+  "version": "0.38.0-beta.0",
+  "description": "bandot",
+  "main": "index.js",
+  "scripts": {},
+  "author": "Skyh",
+  "maintainers": [
+    "Skyh"
+  ],
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@babel/runtime": "^7.7.4",
+    "@polkadot/react-components": "^0.38.0-beta.0"
+  }
+}
