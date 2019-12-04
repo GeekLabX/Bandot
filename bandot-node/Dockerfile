@@ -24,7 +24,7 @@ FROM phusion/baseimage:0.11
 LABEL maintainer="tailinzhang1993@gmail.com"
 LABEL description="This is the 2nd stage: a very small image where we copy the Bandot binary."
 ARG PROFILE=release
-COPY --from=builder /bandot/target/$PROFILE/bandot-node /usr/local/bin
+COPY --from=builder /bandot/target/$PROFILE/bandot2 /usr/local/bin
 
 RUN mv /usr/share/ca* /tmp && \
 	rm -rf /usr/share/*  && \
@@ -40,4 +40,4 @@ USER bandot
 EXPOSE 30333 9933 9944
 VOLUME ["/data"]
 
-CMD ["/usr/local/bin/bandot-node"]
+CMD ["/usr/local/bin/bandot2"]
