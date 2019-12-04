@@ -42,7 +42,7 @@ You can access the UI via http://localhost:3000
 
 first Init pdot and init bdt, open cdp if needed
 
-### pdot is the abstract token stacked 
+### pdot is the abstract token staked 
 
 >init set the admin for mint and burn.
 transfer is used for users
