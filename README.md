@@ -37,3 +37,31 @@ Run the following command
 docker-compose -f docker/docker-compose.yml up -d
 ```
 You can access the UI via http://localhost:3000
+
+## Operations
+
+first Init pdot and init bdt, open cdp if needed
+
+### pdot is the abstract token stacked 
+
+>init set the admin for mint and burn.
+transfer is used for users
+
+### bdt is the stable coin.
+
+>init set the admin for mint and burn.
+transfer is used for users
+
+### cdp
+
+> skrPrice is the price of staked token in market, leave for oracle
+
+#### lock & free
+> lock for stake tokens, then free locked tokens
+
+#### draw & wipe
+> draw for release stable coins, and wipe for give back stable coins to burn.
+
+etc.
+
+
