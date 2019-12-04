@@ -44,23 +44,33 @@ first Init pdot and init bdt, open cdp if needed
 
 ### pdot is the abstract token staked 
 
->init set the admin for mint and burn.
-transfer is used for users
+>init set the admin 
+
+>mint and burn is used by admin.
+
+>transfer is used by users
 
 ### bdt is the stable coin.
 
->init set the admin for mint and burn.
-transfer is used for users
+>init set the admin 
+
+>mint and burn is used by admin.
+
+>transfer is used by users
 
 ### cdp
 
-> skrPrice is the price of staked token in market, leave for oracle
+> skrPrice is the price of staked token in market, used for oracle
 
 #### lock & free
-> lock for stake tokens, then free locked tokens
+> lock: lock staked tokens 
+
+> free: free locked tokens
 
 #### draw & wipe
-> draw for release stable coins, and wipe for give back stable coins to burn.
+> draw: release stable coins 
+
+> wipe: give back stable coins to burn.
 
 etc.
 
