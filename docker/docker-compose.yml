@@ -10,7 +10,7 @@ services:
     image: bandot/bandot:latest
     volumes:
       - "bandot-data-alice:/data"
-    command: bandot-node --chain=local --validator --alice -d /data --node-key 0000000000000000000000000000000000000000000000000000000000000001 --rpc-external --ws-external --rpc-cors=all --pruning=archive
+    command: bandot2 --chain=local --validator --alice -d /data --node-key 0000000000000000000000000000000000000000000000000000000000000001 --rpc-external --ws-external --rpc-cors=all --pruning=archive
     networks:
       testing_net:
         ipv4_address: 172.28.1.1
@@ -27,7 +27,7 @@ services:
       - "bandot-data-bob:/data"
     links:
       - "node_alice:alice"
-    command: bandot-node --chain=local --validator --bob -d /data --port 30344 --rpc-port 9935 --ws-port 9945 --bootnodes '/ip4/172.28.1.1/tcp/30333/p2p/QmQZ8TjTqeDj3ciwr93EJ95hxfDsb9pEYDizUAbWpigtQN'
+    command: bandot2 --chain=local --validator --bob -d /data --port 30344 --rpc-port 9935 --ws-port 9945 --bootnodes '/ip4/172.28.1.1/tcp/30333/p2p/QmQZ8TjTqeDj3ciwr93EJ95hxfDsb9pEYDizUAbWpigtQN'
     networks:
       testing_net:
         ipv4_address: 172.28.1.2
