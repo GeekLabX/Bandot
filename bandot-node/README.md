@@ -16,6 +16,14 @@ Build Wasm and native code:
 cargo build --release
 ```
 
+### Building the bandot node image
+
+To build your own image from the source, you can run the following command:
+```bash
+./docker/build-node.sh
+```
+NOTE: Building the image takes a while. Count at least 30min on a good machine.
+
 ## Run
 
 ### Single node development chain
