@@ -1,6 +1,6 @@
-# Bandot2 Node
+# Bandot Node
 
-A new SRML-based Bandot2 node, ready for hacking.
+A new SRML-based Bandot node, ready for hacking.
 
 ## Build
 
@@ -8,12 +8,6 @@ Install Rust:
 
 ```bash
 curl https://sh.rustup.rs -sSf | sh
-```
-
-Initialize your Wasm Build environment:
-
-```bash
-./scripts/init.sh
 ```
 
 Build Wasm and native code:
@@ -29,13 +23,13 @@ cargo build --release
 Purge any existing developer chain state:
 
 ```bash
-./target/release/bandot2 purge-chain --dev
+./target/release/bandot purge-chain --dev
 ```
 
 Start a development chain with:
 
 ```bash
-./target/release/bandot2 --dev
+./target/release/bandot --dev
 ```
 
 Detailed logs may be shown by running the node with the following environment variables set: `RUST_LOG=debug RUST_BACKTRACE=1 cargo run -- --dev`.
