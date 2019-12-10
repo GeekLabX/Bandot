@@ -1,6 +1,6 @@
 # Bandot
 
-![bandot](http://m.qpic.cn/psb?/V13jRaJF46miWu/hUvrZrgDsUixC4j5xNFpITzqkv3D3YTfLO0ytOSYFGI!/b/dFMBAAAAAAAA&bo=7gIsAQAAAAARF.E!&rf=viewer_4&t=5)
+![bandot](http://m.qpic.cn/psb?/V12XQ2H10fNmqi/aPuLJP63uy9X92MeuPPLSYrd0BimNBptFdPr1JFD2*0!/b/dLYAAAAAAAAA&bo=7gIsAe4CLAERGS4!&rf=viewer_4&t=5)
 
 Introduce
 ===
