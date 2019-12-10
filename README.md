@@ -1,6 +1,6 @@
 # Bandot
 
-![bandot](http://m.qpic.cn/psb?/V12XQ2H10fNmqi/aPuLJP63uy9X92MeuPPLSYrd0BimNBptFdPr1JFD2*0!/b/dLYAAAAAAAAA&bo=7gIsAe4CLAERGS4!&rf=viewer_4&t=5)
+![bandot](https://img-blog.csdnimg.cn/20191210135112330.jpg?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dpbGxhbTE=,size_16,color_FFFFFF,t_70)
 
 Introduce
 ===
