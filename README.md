@@ -27,7 +27,7 @@ You can access the UI via http://localhost:3000
 
 ## Operations
 
-first Init pdot and init bdt, open cdp if needed
+**first click "Init pdot" and click "init bdt", click "open cdp" if needed(set global index 0 and user index 0)**
 
 ### pdot is the abstract token staked 
 
