@@ -21,13 +21,13 @@ cargo build --release
 Purge any existing developer chain state:
 
 ```bash
-./target/release/bandot purge-chain --dev
+./target/release/bandot2 purge-chain --dev
 ```
 
 Start a development chain with:
 
 ```bash
-./target/release/bandot --dev
+./target/release/bandot2 --dev
 ```
 
 Detailed logs may be shown by running the node with the following environment variables set: `RUST_LOG=debug RUST_BACKTRACE=1 cargo run -- --dev`.
