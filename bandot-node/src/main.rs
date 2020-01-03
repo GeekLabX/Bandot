@@ -1,5 +1,4 @@
-//! Bandot Node Template CLI library.
-
+//! Bandot Node
 #![warn(missing_docs)]
 #![warn(unused_extern_crates)]
 
@@ -8,17 +7,17 @@ mod chain_spec;
 mod service;
 mod cli;
 
-pub use substrate_cli::{VersionInfo, IntoExit, error};
+pub use sc_cli::{VersionInfo, IntoExit, error};
 
 fn main() -> Result<(), cli::error::Error> {
 	let version = VersionInfo {
-		name: "Bandot Node",
+		name: "Bandot",
 		commit: env!("VERGEN_SHA_SHORT"),
 		version: env!("CARGO_PKG_VERSION"),
-		executable_name: "node-template",
-		author: "Anonymous",
-		description: "Template Node",
-		support_url: "support.anonymous.an",
+		executable_name: "bandot",
+		author: "Bandot Developers",
+		description: "bandot",
+		support_url: "",
 	};
 
 	cli::run(std::env::args(), cli::Exit, version)

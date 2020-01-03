@@ -1,11 +1,11 @@
-use support::{
+use frame_support::{
 	decl_module, decl_storage, decl_event, ensure,
 	StorageValue, StorageMap, dispatch::Result,
 };
 // use support::traits::{
 	// Currency
 // };
-use sr_primitives::traits::{
+use sp_primitives::traits::{
 	CheckedAdd, Zero,
 };
 use codec::{Encode, Decode};

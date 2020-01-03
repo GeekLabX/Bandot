@@ -1,4 +1,4 @@
-//! The Substrate Node Template runtime. This can be compiled with `#[no_std]`, ready for Wasm.
+//! The Bandot runtime. This can be compiled with `#[no_std]`, ready for Wasm.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
@@ -8,31 +8,31 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-use rstd::prelude::*;
 use primitives::OpaqueMetadata;
-use sr_primitives::{
-	ApplyResult, transaction_validity::TransactionValidity, generic, create_runtime_str,
+use rstd::prelude::*;
+use sp_api::impl_runtime_apis;
+use sp_runtime::{
+	ApplyExtrinsicResult, transaction_validity::TransactionValidity, generic, create_runtime_str,
 	impl_opaque_keys, MultiSignature
 };
-use sr_primitives::traits::{
+use sp_runtime::traits::{
 	NumberFor, BlakeTwo256, Block as BlockT, StaticLookup, Verify, ConvertInto, IdentifyAccount
 };
-use sr_primitives::weights::Weight;
-use sr_api::impl_runtime_apis;
-use aura_primitives::sr25519::AuthorityId as AuraId;
-use grandpa::AuthorityList as GrandpaAuthorityList;
-use grandpa::fg_primitives;
-use version::RuntimeVersion;
 #[cfg(feature = "std")]
 use version::NativeVersion;
+use version::RuntimeVersion;
+
+use aura_primitives::sr25519::AuthorityId as AuraId;
+use pallet_grandpa::AuthorityList as GrandpaAuthorityList;
+use pallet_grandpa::fg_primitives;
 
 // A few exports that help ease life for downstream crates.
+
+pub use frame_support::{StorageValue, construct_runtime, parameter_types, traits::Randomness, weights::Weight, };
+pub use pallet_timestamp::Call as TimestampCall;
 #[cfg(any(feature = "std", test))]
-pub use sr_primitives::BuildStorage;
-pub use timestamp::Call as TimestampCall;
-pub use balances::Call as BalancesCall;
-pub use sr_primitives::{Permill, Perbill};
-pub use support::{StorageValue, construct_runtime, parameter_types, traits::Randomness};
+pub use sp_runtime::BuildStorage;
+pub use sp_runtime::{Permill, Perbill};
 
 /// An index to a block.
 pub type BlockNumber = u32;
@@ -72,7 +72,7 @@ mod pdot;
 pub mod opaque {
 	use super::*;
 
-	pub use sr_primitives::OpaqueExtrinsic as UncheckedExtrinsic;
+	pub use sp_runtime::OpaqueExtrinsic as UncheckedExtrinsic;
 
 	/// Opaque block header type.
 	pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
@@ -91,8 +91,8 @@ pub mod opaque {
 
 /// This runtime version.
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("bandot-node"),
-	impl_name: create_runtime_str!("bandot-node"),
+	spec_name: create_runtime_str!("bandot"),
+	impl_name: create_runtime_str!("bandot"),
 	authoring_version: 1,
 	spec_version: 1,
 	impl_version: 1,
@@ -156,22 +156,23 @@ impl system::Trait for Runtime {
 	type AvailableBlockRatio = AvailableBlockRatio;
 	/// Version of the runtime.
 	type Version = Version;
+	type ModuleToIndex = ModuleToIndex;
 }
 
-impl aura::Trait for Runtime {
+impl pallet_aura::Trait for Runtime {
 	type AuthorityId = AuraId;
 }
 
-impl grandpa::Trait for Runtime {
+impl pallet_grandpa::Trait for Runtime {
 	type Event = Event;
 }
 
-impl indices::Trait for Runtime {
+impl pallet_indices::Trait for Runtime {
 	/// The type for recording indexing into the account enumeration. If this ever overflows, there
 	/// will be problems!
 	type AccountIndex = AccountIndex;
 	/// Use the standard means of resolving an index hint from an id.
-	type ResolveHint = indices::SimpleResolveHint<Self::AccountId, Self::AccountIndex>;
+	type ResolveHint = pallet_indices::SimpleResolveHint<Self::AccountId, Self::AccountIndex>;
 	/// Determine whether an account is dead.
 	type IsDeadAccount = Balances;
 	/// The ubiquitous event type.
@@ -182,7 +183,7 @@ parameter_types! {
 	pub const MinimumPeriod: u64 = SLOT_DURATION / 2;
 }
 
-impl timestamp::Trait for Runtime {
+impl pallet_timestamp::Trait for Runtime {
 	/// A timestamp: milliseconds since the unix epoch.
 	type Moment = u64;
 	type OnTimestampSet = Aura;
@@ -195,7 +196,7 @@ parameter_types! {
 	pub const CreationFee: u128 = 0;
 }
 
-impl balances::Trait for Runtime {
+impl pallet_balances::Trait for Runtime {
 	/// The type for recording an account's balance.
 	type Balance = Balance;
 	/// What to do if an account's free balance gets zeroed.
@@ -216,8 +217,8 @@ parameter_types! {
 	pub const TransactionByteFee: Balance = 1;
 }
 
-impl transaction_payment::Trait for Runtime {
-	type Currency = balances::Module<Runtime>;
+impl pallet_transaction_payment::Trait for Runtime {
+	type Currency = pallet_balances::Module<Runtime>;
 	type OnTransactionPayment = ();
 	type TransactionBaseFee = TransactionBaseFee;
 	type TransactionByteFee = TransactionByteFee;
@@ -225,7 +226,7 @@ impl transaction_payment::Trait for Runtime {
 	type FeeMultiplierUpdate = ();
 }
 
-impl sudo::Trait for Runtime {
+impl pallet_sudo::Trait for Runtime {
 	type Event = Event;
 	type Proposal = Call;
 }
@@ -253,19 +254,19 @@ construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic
 	{
 		System: system::{Module, Call, Storage, Config, Event},
-		Timestamp: timestamp::{Module, Call, Storage, Inherent},
-		Aura: aura::{Module, Config<T>, Inherent(Timestamp)},
-		Grandpa: grandpa::{Module, Call, Storage, Config, Event},
-		Indices: indices::{default, Config<T>},
-		Balances: balances::{default, Error},
-		TransactionPayment: transaction_payment::{Module, Storage},
-		Sudo: sudo,
+		Timestamp: pallet_timestamp::{Module, Call, Storage, Inherent},
+		Aura: pallet_aura::{Module, Config<T>, Inherent(Timestamp)},
+		Grandpa: pallet_grandpa::{Module, Call, Storage, Config, Event},
+		Indices: pallet_indices,
+		Balances: pallet_balances,
+		TransactionPayment: pallet_transaction_payment::{Module, Storage},
+		Sudo: pallet_sudo,
 
 		Cdp: cdp::{Module, Call, Storage, Config<T>, Event<T>},
 		Bdt: bdt::{Module, Call, Storage, Config<T>, Event<T>},
 		Pdot: pdot::{Module, Call, Storage, Config<T>, Event<T>},
 
-		RandomnessCollectiveFlip: randomness_collective_flip::{Module, Call, Storage},
+		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
 	}
 );
 
@@ -286,17 +287,17 @@ pub type SignedExtra = (
 	system::CheckEra<Runtime>,
 	system::CheckNonce<Runtime>,
 	system::CheckWeight<Runtime>,
-	transaction_payment::ChargeTransactionPayment<Runtime>
+	pallet_transaction_payment::ChargeTransactionPayment<Runtime>
 );
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
 /// Extrinsic type that has already been checked.
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, Call, SignedExtra>;
 /// Executive: handles dispatch to the various modules.
-pub type Executive = executive::Executive<Runtime, Block, system::ChainContext<Runtime>, Runtime, AllModules>;
+pub type Executive = frame_executive::Executive<Runtime, Block, system::ChainContext<Runtime>, Runtime, AllModules>;
 
 impl_runtime_apis! {
-	impl sr_api::Core<Block> for Runtime {
+	impl sp_api::Core<Block> for Runtime {
 		fn version() -> RuntimeVersion {
 			VERSION
 		}
@@ -310,14 +311,14 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl sr_api::Metadata<Block> for Runtime {
+	impl sp_api::Metadata<Block> for Runtime {
 		fn metadata() -> OpaqueMetadata {
 			Runtime::metadata().into()
 		}
 	}
 
 	impl block_builder_api::BlockBuilder<Block> for Runtime {
-		fn apply_extrinsic(extrinsic: <Block as BlockT>::Extrinsic) -> ApplyResult {
+		fn apply_extrinsic(extrinsic: <Block as BlockT>::Extrinsic) -> ApplyExtrinsicResult {
 			Executive::apply_extrinsic(extrinsic)
 		}
 
@@ -341,7 +342,7 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl tx_pool_api::TaggedTransactionQueue<Block> for Runtime {
+	impl sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block> for Runtime {
 		fn validate_transaction(tx: <Block as BlockT>::Extrinsic) -> TransactionValidity {
 			Executive::validate_transaction(tx)
 		}
@@ -363,7 +364,7 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl substrate_session::SessionKeys<Block> for Runtime {
+	impl sp_session::SessionKeys<Block> for Runtime {
 		fn generate_session_keys(seed: Option<Vec<u8>>) -> Vec<u8> {
 			opaque::SessionKeys::generate(seed)
 		}

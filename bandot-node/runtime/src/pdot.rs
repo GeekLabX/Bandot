@@ -1,17 +1,15 @@
-use support::{
-	decl_module, decl_storage, decl_event, ensure,
-	StorageValue, StorageMap, dispatch::Result, Parameter
+use frame_support::{
+	decl_module, decl_storage, decl_event, ensure, Parameter
 };
-use sr_primitives::{
+use sp_runtime::{
 	traits::{
-		SimpleArithmetic, Member, CheckedAdd, CheckedSub, MaybeSerializeDeserialize, StaticLookup,
-		SaturatedConversion,
-	},
+		SimpleArithmetic, Member, CheckedAdd, CheckedSub, 
+		MaybeSerializeDeserialize, StaticLookup},
+	DispatchResult
 };
 use codec::Codec;
-use system::ensure_signed;
 use crate::traits::{Token, MintableToken};
-use runtime_io;
+use system::ensure_signed;
 
 pub trait Trait: system::Trait {
 	type Balance: Parameter + Member + SimpleArithmetic + Codec + Default + Copy + MaybeSerializeDeserialize;
@@ -33,7 +31,7 @@ decl_module! {
 	pub struct Module<T: Trait> for enum Call where origin: T::Origin {
 		fn deposit_event() = default;
 
-		pub fn init(origin) -> Result{
+		pub fn init(origin) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 			ensure!(Self::is_init() == false, "Already initialized.");
 			ensure!(Self::owner() == sender, "Only owner can initalize.");
@@ -44,7 +42,7 @@ decl_module! {
 			Ok(())
 		}
 
-		pub fn transfer(origin, receiver: <T::Lookup as StaticLookup>::Source, #[compact] value: T::Balance) -> Result {
+		pub fn transfer(origin, receiver: <T::Lookup as StaticLookup>::Source, #[compact] value: T::Balance) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 			ensure!(<BalanceOf<T>>::exists(sender.clone()), "Account does not own this token.");
 			let receiver = T::Lookup::lookup(receiver)?;
@@ -53,7 +51,7 @@ decl_module! {
 			<Self as Token<_>>::transfer(&sender, &receiver, value)
 		}
 
-		pub fn mint(origin, to: <T::Lookup as StaticLookup>::Source, #[compact] value: T::Balance) -> Result {
+		pub fn mint(origin, to: <T::Lookup as StaticLookup>::Source, #[compact] value: T::Balance) -> DispatchResult {
 			let transactor = ensure_signed(origin)?;
 			ensure!(transactor == Self::owner(), "only owner can use!");
 			let to = T::Lookup::lookup(to)?;
@@ -61,7 +59,7 @@ decl_module! {
 			<Self as MintableToken<_>>::mint(&to, value)
 		}
 
-		pub fn burn(origin, from: <T::Lookup as StaticLookup>::Source, #[compact] value: T::Balance) -> Result {
+		pub fn burn(origin, from: <T::Lookup as StaticLookup>::Source, #[compact] value: T::Balance) -> DispatchResult {
 			let transactor = ensure_signed(origin)?;
 			ensure!(transactor == Self::owner(), "only owner can use!");
 			let from = T::Lookup::lookup(from)?;
@@ -82,7 +80,7 @@ impl<T: Trait> Token<T::AccountId> for Module<T> {
 		<BalanceOf<T>>::get(who)
 	}
 
-	fn transfer(source: &T::AccountId, dest: &T::AccountId, value: Self::Balance) -> Result {
+	fn transfer(source: &T::AccountId, dest: &T::AccountId, value: Self::Balance) -> DispatchResult {
 		let sender_balance = Self::balance_of(source);
 		ensure!(sender_balance >= value, "Not enough balance.");
 		let updated_sender_balance = sender_balance.checked_sub(&value).ok_or("overflow in calculating balance")?;
@@ -101,7 +99,7 @@ impl<T: Trait> Token<T::AccountId> for Module<T> {
 }
 
 impl<T: Trait> MintableToken<T::AccountId> for Module<T> {
-	fn mint(to: &T::AccountId, value: Self::Balance) -> Result {
+	fn mint(to: &T::AccountId, value: Self::Balance) -> DispatchResult {
 		let to_balance = Self::balance_of(to);
 		let updated_to_balance = to_balance.checked_add(&value).ok_or("overflow in balance")?;
 		<BalanceOf<T>>::insert(to, updated_to_balance);
@@ -114,7 +112,7 @@ impl<T: Trait> MintableToken<T::AccountId> for Module<T> {
 		Ok(())
 	}
 
-	fn burn(from: &T::AccountId, value: Self::Balance) -> Result {
+	fn burn(from: &T::AccountId, value: Self::Balance) -> DispatchResult {
 		let from_balance = Self::balance_of(from.clone());
 		ensure!(from_balance >= value, "Not enough balance.");
 		let updated_from_balance = from_balance.checked_sub(&value).ok_or("overflow in balance")?;

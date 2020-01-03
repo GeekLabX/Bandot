@@ -1,19 +1,24 @@
-use support::{
-	decl_module, decl_storage, decl_event, ensure,
-	StorageValue, StorageMap, dispatch::Result, print, 
+use frame_support::{
+	decl_module, decl_storage, decl_event, ensure
 };
-use sr_primitives::traits::{
-	CheckedAdd, CheckedSub, Zero, SaturatedConversion
+use sp_runtime::{
+	traits::{CheckedAdd, CheckedSub, Zero, SaturatedConversion},
+	RuntimeDebug, DispatchResult
 };
 use codec::{Encode, Decode};
-use system::{ensure_signed, ensure_root};
 use crate::traits::{Token, MintableToken};
-use rstd::convert::TryInto;
-use arithmetic::Fixed64;
-use runtime_io;
+use system::{self as system, ensure_signed, ensure_root};
+
+#[cfg_attr(feature = "std", derive(PartialEq, Eq))]
+#[derive(Encode, Decode, Clone, RuntimeDebug)]
+pub struct ExchangeRateItem<AccountId, BlockNumber> {
+	owner: AccountId,
+	rate: u32,
+	start_time: BlockNumber,
+}
 
 /// The module's configuration trait.
-pub trait Trait: system::Trait + timestamp::Trait {
+pub trait Trait: system::Trait + pallet_timestamp::Trait {
 	type Sai: MintableToken<Self::AccountId>; // Stable coin
 	type Skr: Token<Self::AccountId>; // Abstracted collateral
 
@@ -50,6 +55,9 @@ decl_storage! {
 		AllCupsCount get(all_cups_count): u64;
 		OwnedCupsArray get(cup_of_owner_by_index): map (T::AccountId, u32) => u64;
 		OwnedCupsCount get(owned_cup_count): map T::AccountId => u32;
+
+		ExchangeRates get(fn exchange_rates): map T::AccountId =>
+		Option<ExchangeRateItem<T::AccountId, T::BlockNumber>>;
 	}
 }
 
@@ -63,9 +71,9 @@ decl_module! {
 			SkrPrice::put(price);
 		}
 
-		pub fn get_time(origin) -> Result {
+		pub fn get_time(origin) -> DispatchResult {
 			let _sender = ensure_signed(origin)?;
-			let now = <timestamp::Module<T>>::get();
+			let now = <pallet_timestamp::Module<T>>::get();
 			Ok(())
 		}
 
@@ -186,7 +194,7 @@ mod tests {
 	use crate::pdot;
 	use crate::bdt;
 
-	use sr_primitives::{
+	use sp_primitives::{
 		traits::{BlakeTwo256, IdentityLookup}, testing::Header, weights::Weight, Perbill,
 	};
 

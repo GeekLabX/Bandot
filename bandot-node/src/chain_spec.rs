@@ -1,19 +1,19 @@
-use primitives::{Pair, Public, sr25519};
+use sp_core::{Pair, Public, sr25519};
 use runtime::{
 	AccountId, AuraConfig, BalancesConfig, GenesisConfig, GrandpaConfig,
-	SudoConfig, IndicesConfig, SystemConfig, WASM_BINARY, Signature, 
-	CdpConfig, BdtConfig, PdotConfig,
+	SudoConfig, IndicesConfig, SystemConfig, WASM_BINARY, Signature,
+	CdpConfig, BdtConfig, PdotConfig
 };
-use aura_primitives::sr25519::{AuthorityId as AuraId};
+use sp_consensus_aura::sr25519::{AuthorityId as AuraId};
 use grandpa_primitives::{AuthorityId as GrandpaId};
-use substrate_service;
-use sr_primitives::traits::{Verify, IdentifyAccount};
+use sc_service;
+use sp_runtime::traits::{IdentifyAccount, Verify};
 
 // Note this is the URL for the telemetry server
 //const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 
 /// Specialized `ChainSpec`. This is a specialization of the general Substrate ChainSpec type.
-pub type ChainSpec = substrate_service::ChainSpec<GenesisConfig>;
+pub type ChainSpec = sc_service::ChainSpec<GenesisConfig>;
 
 /// The chain specification option. This is expected to come in from the CLI and
 /// is little more than one of a number of alternatives which can easily be converted
@@ -124,20 +124,20 @@ fn testnet_genesis(initial_authorities: Vec<(AuraId, GrandpaId)>,
 			code: WASM_BINARY.to_vec(),
 			changes_trie_config: Default::default(),
 		}),
-		indices: Some(IndicesConfig {
+		pallet_indices: Some(IndicesConfig {
 			ids: endowed_accounts.clone(),
 		}),
-		balances: Some(BalancesConfig {
+		pallet_balances: Some(BalancesConfig {
 			balances: endowed_accounts.iter().cloned().map(|k|(k, 1 << 60)).collect(),
 			vesting: vec![],
 		}),
-		sudo: Some(SudoConfig {
+		pallet_sudo: Some(SudoConfig {
 			key: root_key.clone(),
 		}),
-		aura: Some(AuraConfig {
+		pallet_aura: Some(AuraConfig {
 			authorities: initial_authorities.iter().map(|x| (x.0.clone())).collect(),
 		}),
-		grandpa: Some(GrandpaConfig {
+		pallet_grandpa: Some(GrandpaConfig {
 			authorities: initial_authorities.iter().map(|x| (x.1.clone(), 1)).collect(),
 		}),
 		cdp: Some(CdpConfig {
@@ -148,8 +148,8 @@ fn testnet_genesis(initial_authorities: Vec<(AuraId, GrandpaId)>,
 			circulation: 0,
 		}),
 		pdot: Some(PdotConfig {
-			owner: root_key,
+			owner: root_key.clone(),
 			circulation: 0,
-		}),
+		}),		
 	}
 }

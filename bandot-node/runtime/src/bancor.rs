@@ -1,5 +1,5 @@
 
-use support::{
+use frame_support::{
 	decl_module, decl_storage, decl_event, ensure,
 	StorageValue, StorageMap, dispatch::Result
 };
