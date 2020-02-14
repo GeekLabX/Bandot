@@ -4,7 +4,7 @@ use frame_support::{
 use sp_runtime::{
 	traits::{
 		SimpleArithmetic, Member, CheckedAdd, CheckedSub, 
-		MaybeSerializeDeserialize, StaticLookup},
+		MaybeSerializeDeserialize, StaticLookup },
 	DispatchResult
 };
 use codec::Codec;

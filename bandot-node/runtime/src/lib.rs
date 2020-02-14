@@ -232,7 +232,7 @@ impl pallet_sudo::Trait for Runtime {
 }
 
 impl cdp::Trait for Runtime {
-	type Sai = Bdt;
+	type Bdt = Bdt;
 	type Skr = Pdot;
 	type Event = Event;
 }
